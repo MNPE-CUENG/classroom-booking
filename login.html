@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Space Reservation System</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background-color: #f4f5f7; /* สีพื้นหลังเทาเงิน ช่วยให้การ์ดสีขาวดูโดดเด่น */
+        }
+        .chula-navy { background-color: #2b3990; }
+        .text-chula-navy { color: #2b3990; }
+        
+        /* ดีไซน์ช่องกรอกข้อมูลแบบเป็นทางการ */
+        .input-formal {
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            background-color: #ffffff;
+            color: #374151;
+        }
+        .input-formal:focus {
+            outline: none;
+            border-color: #2b3990;
+            box-shadow: 0 0 0 3px rgba(43, 57, 144, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+    <div class="absolute top-0 left-0 w-full h-1.5 chula-navy"></div>
+
+    <div class="bg-white p-8 sm:p-10 rounded shadow-xl border border-gray-200 w-full max-w-md relative z-10">
+        
+        <div class="text-center mb-8">
+            <img src="logo.png" alt="Department Logo" class="h-16 mx-auto mb-5">
+            <h1 class="text-lg font-bold text-gray-800 tracking-wider uppercase">Space Reservation</h1>
+            <p class="text-xs text-gray-500 uppercase tracking-widest mt-1 mb-4">Lecturer & Admin Portal</p>
+            
+            <div class="w-10 h-0.5 chula-navy mx-auto"></div>
+            
+            <p class="text-[11px] text-gray-500 mt-4 leading-relaxed font-semibold">
+                DEPARTMENT OF MINING AND PETROLEUM ENGINEERING<br>
+                FACULTY OF ENGINEERING, CHULALONGKORN UNIVERSITY
+            </p>
+        </div>
+
+        <form id="login-form" class="space-y-5">
+            <div>
+                <label for="staffId" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Staff ID</label>
+                <input type="text" id="staffId" required placeholder="Enter your ID" autocomplete="off"
+                    class="input-formal">
+            </div>
+            
+            <div>
+                <label for="password" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Password</label>
+                <input type="password" id="password" required placeholder="Enter your password"
+                    class="input-formal">
+            </div>
+
+            <p id="error-msg" class="text-red-600 text-xs hidden text-center pt-1 font-medium bg-red-50 py-1.5 rounded">
+                * ID หรือ Password ไม่ถูกต้อง
+            </p>
+
+            <div class="pt-3">
+                <button type="submit" id="login-btn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded shadow-md text-sm font-bold text-white chula-navy hover:opacity-90 focus:outline-none transition-all uppercase tracking-widest">
+                    Sign In
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-8 text-center text-[10px] text-gray-400 font-medium tracking-wide">
+            &copy; 2026 Dept. Mining & Petroleum Engineering. ALL RIGHTS RESERVED.
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
