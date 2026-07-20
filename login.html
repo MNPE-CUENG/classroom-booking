@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#172554">
+
+    <title>เข้าสู่ระบบ | ระบบจองห้องและพื้นที่</title>
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --navy-950: #10183c;
+            --navy-900: #172554;
+            --navy-800: #1e3475;
+            --navy-700: #29458f;
+            --ink-900: #172033;
+            --ink-700: #344054;
+            --ink-500: #667085;
+            --ink-400: #8a94a6;
+            --line: #d9deea;
+            --line-soft: #e9edf4;
+            --surface: #ffffff;
+            --surface-muted: #f7f8fb;
+            --page: #edf0f5;
+            --danger: #b42318;
+            --danger-surface: #fff4f2;
+            --accent: #d9ad58;
+            --success: #4bbd7a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100svh;
+            color: var(--ink-900);
+            background: url("bg-mine.jpg") center / cover no-repeat;
+            font-family:
+                "IBM Plex Sans Thai",
+                "Noto Sans Thai",
+                Tahoma,
+                Arial,
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .page {
+            min-height: 100vh;
+            min-height: 100svh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(16px, 3.2vh, 32px) clamp(16px, 3vw, 36px);
+        }
+
+        .login-shell {
+            width: min(980px, 100%);
+            min-height: 560px;
+            display: grid;
+            grid-template-columns: minmax(0, 0.94fr) minmax(420px, 1.06fr);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 15px;
+            background: var(--surface);
+            box-shadow: none;
+        }
+
+        /* =========================
+           BRAND PANEL
+        ========================== */
+
+        .brand-panel {
+            position: relative;
+            isolation: isolate;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            padding: 34px;
+            color: #ffffff;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(15, 24, 58, 0.45) 0%,
+                    rgba(15, 24, 58, 0.62) 46%,
+                    rgba(15, 24, 58, 0.92) 100%
+                ),
+                url("bg-mine.jpg") center / cover no-repeat;
+        }
+
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(10, 18, 48, 0.18),
+                    transparent 52%
+                );
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            width: min(100%, 390px);
+        }
+
+        .logo-plate {
+            width: 56px;
+            height: 56px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            padding: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.97);
+        }
+
+        .logo-plate img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .brand-lockup-text {
+            min-width: 0;
+        }
+
+        .brand-lockup-th {
+            margin: 0;
+            font-family:
+                "Bai Jamjuree",
+                "IBM Plex Sans Thai",
+                sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.55;
+        }
+
+        .brand-lockup-en {
+            margin: 4px 0 0;
+            color: rgba(255, 255, 255, 0.64);
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 0.055em;
+            line-height: 1.5;
+        }
+
+        .brand-summary {
+            width: min(100%, 390px);
+            margin-top: auto;
+            padding: 26px 0 18px;
+        }
+
+        .brand-summary::before {
+            content: "";
+            display: block;
+            width: 42px;
+            height: 2px;
+            margin-bottom: 14px;
+            background: var(--accent);
+        }
+
+        .brand-system-name {
+            margin: 0;
+            font-family:
+                "Bai Jamjuree",
+                "IBM Plex Sans Thai",
+                sans-serif;
+            font-size: clamp(22px, 2.15vw, 27px);
+            font-weight: 500;
+            line-height: 1.42;
+            letter-spacing: -0.012em;
+        }
+
+        .brand-description {
+            max-width: 400px;
+            margin: 12px 0 0;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 12px;
+            font-weight: 300;
+            line-height: 1.75;
+        }
+
+        .brand-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .system-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .system-status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(75, 189, 122, 0.12);
+        }
+
+        /* =========================
+           FORM PANEL
+        ========================== */
+
+        .form-panel {
+            display: flex;
+            align-items: center;
+            padding: 42px 54px;
+            background: var(--surface);
+        }
+
+        .form-wrap {
+            width: 100%;
+            max-width: 390px;
+            margin: 0 auto;
+        }
+
+        .mobile-lockup {
+            display: none;
+        }
+
+        .form-context {
+            margin: 0 0 9px;
+            color: var(--navy-700);
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .form-title {
+            margin: 0;
+            color: var(--ink-900);
+            font-family:
+                "Bai Jamjuree",
+                "IBM Plex Sans Thai",
+                sans-serif;
+            font-size: 28px;
+            font-weight: 500;
+            line-height: 1.3;
+            letter-spacing: -0.012em;
+        }
+
+        .form-subtitle {
+            margin: 8px 0 26px;
+            color: var(--ink-500);
+            font-size: 13px;
+            font-weight: 300;
+            line-height: 1.75;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--ink-700);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            width: 18px;
+            height: 18px;
+            color: #8c96aa;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 45px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            outline: none;
+            color: var(--ink-900);
+            background: var(--surface-muted);
+            font-size: 13px;
+            font-weight: 400;
+            transition:
+                border-color 140ms ease,
+                box-shadow 140ms ease,
+                background-color 140ms ease;
+        }
+
+        .form-input::placeholder {
+            color: #9aa3b4;
+        }
+
+        .form-input:hover {
+            border-color: #bcc4d3;
+        }
+
+        .form-input:focus {
+            border-color: var(--navy-700);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(41, 69, 143, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 7px;
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border: 0;
+            border-radius: 7px;
+            outline: none;
+            color: #7e899d;
+            background: transparent;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .password-toggle:hover {
+            color: var(--navy-700);
+            background: #edf0f6;
+        }
+
+        .password-toggle:focus-visible {
+            box-shadow: 0 0 0 3px rgba(41, 69, 143, 0.15);
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-note {
+            margin: 7px 0 0;
+            color: var(--ink-400);
+            font-size: 10.5px;
+            font-weight: 300;
+            line-height: 1.55;
+        }
+
+        .error-message {
+            margin: 2px 0 18px;
+            padding: 11px 13px;
+            border: 1px solid #fecdca;
+            border-radius: 7px;
+            color: var(--danger);
+            background: var(--danger-surface);
+            font-size: 11.5px;
+            font-weight: 400;
+            line-height: 1.55;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .submit-button {
+            width: 100%;
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            margin-top: 7px;
+            border: 1px solid var(--navy-900);
+            border-radius: 8px;
+            outline: none;
+            color: #ffffff;
+            background: var(--navy-900);
+            box-shadow: 0 8px 18px rgba(23, 37, 84, 0.17);
+            font-size: 12.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition:
+                background-color 140ms ease,
+                border-color 140ms ease,
+                box-shadow 140ms ease;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            border-color: var(--navy-800);
+            background: var(--navy-800);
+            box-shadow: 0 10px 22px rgba(23, 37, 84, 0.21);
+        }
+
+        .submit-button:focus-visible {
+            box-shadow:
+                0 0 0 3px rgba(41, 69, 143, 0.16),
+                0 8px 18px rgba(23, 37, 84, 0.17);
+        }
+
+        .submit-button:disabled {
+            cursor: wait;
+            opacity: 0.76;
+        }
+
+        .button-spinner {
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.72s linear infinite;
+        }
+
+        .support-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line-soft);
+            color: var(--ink-500);
+            font-size: 10.5px;
+            font-weight: 300;
+            line-height: 1.65;
+        }
+
+        .support-note svg {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+            margin-top: 1px;
+            color: #7c879a;
+        }
+
+        .form-footer {
+            margin-top: 28px;
+            color: #99a2b2;
+            font-size: 9.5px;
+            font-weight: 300;
+            line-height: 1.65;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+
+        /* iPad แนวตั้งและ Tablet */
+        @media (max-width: 860px) {
+            .page {
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .login-shell {
+                width: min(700px, 100%);
+                min-height: 0;
+                grid-template-columns: 1fr;
+            }
+
+            .brand-panel {
+                min-height: 172px;
+                padding: 24px 28px;
+                background-position: center 38%;
+            }
+
+            .brand-lockup {
+                width: 100%;
+                max-width: 520px;
+            }
+
+            .logo-plate {
+                width: 54px;
+                height: 54px;
+            }
+
+            .brand-summary,
+            .brand-meta {
+                display: none;
+            }
+
+            .form-panel {
+                padding: 36px 46px 40px;
+            }
+
+            .form-wrap {
+                max-width: 430px;
+            }
+        }
+
+        /* โทรศัพท์และ Tablet ขนาดเล็ก */
+        @media (max-width: 560px) {
+            body {
+                background-position: center;
+                background-attachment: scroll;
+            }
+
+            .page {
+                align-items: center;
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .login-shell {
+                width: 100%;
+                border-radius: 13px;
+            }
+
+            .brand-panel {
+                min-height: 126px;
+                padding: 20px;
+                background-position: center 34%;
+            }
+
+            .brand-lockup {
+                align-items: center;
+                gap: 11px;
+            }
+
+            .logo-plate {
+                width: 48px;
+                height: 48px;
+                padding: 5px;
+                border-radius: 8px;
+            }
+
+            .brand-lockup-th {
+                font-size: 12.5px;
+                line-height: 1.45;
+            }
+
+            .brand-lockup-en {
+                display: none;
+            }
+
+            .form-panel {
+                padding: 28px 22px 30px;
+            }
+
+            .form-title {
+                font-size: 26px;
+            }
+
+            .form-subtitle {
+                margin-bottom: 24px;
+            }
+
+            .form-footer {
+                margin-top: 25px;
+            }
+        }
+
+        /* โทรศัพท์จอแคบมาก */
+        @media (max-width: 360px) {
+            .page {
+                align-items: center;
+                justify-content: center;
+                padding: 8px;
+            }
+
+            .brand-panel {
+                min-height: 112px;
+                padding: 16px;
+            }
+
+            .logo-plate {
+                width: 44px;
+                height: 44px;
+            }
+
+            .brand-lockup-th {
+                font-size: 11.5px;
+            }
+
+            .form-panel {
+                padding: 24px 18px 26px;
+            }
+        }
+
+        /* หน้าจอเตี้ย เช่น Notebook หรือมือถือแนวนอน */
+        @media (min-width: 861px) and (max-height: 680px) {
+            .page {
+                align-items: center;
+                justify-content: center;
+                padding-top: 14px;
+                padding-bottom: 14px;
+            }
+
+            .login-shell {
+                min-height: 540px;
+            }
+
+            .brand-panel {
+                padding: 30px;
+            }
+
+            .form-panel {
+                padding-top: 32px;
+                padding-bottom: 32px;
+            }
+        }
+
+        @media (max-height: 560px) {
+            .page {
+                min-height: 100vh;
+                min-height: 100svh;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .login-shell {
+                margin-top: auto;
+                margin-bottom: auto;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <section class="login-shell" aria-label="ระบบเข้าสู่ระบบจองห้องและพื้นที่">
+            <aside class="brand-panel" aria-label="ข้อมูลภาควิชา">
+                <header class="brand-lockup">
+                    <div class="logo-plate">
+                        <img
+                            src="logo.png"
+                            alt="ตราภาควิชาวิศวกรรมเหมืองแร่และปิโตรเลียม">
+                    </div>
+
+                    <div class="brand-lockup-text">
+                        <p class="brand-lockup-th">
+                            ภาควิชาวิศวกรรมเหมืองแร่และปิโตรเลียม
+                        </p>
+                        <p class="brand-lockup-en">
+                            Department of Mining and Petroleum Engineering
+                        </p>
+                    </div>
+                </header>
+
+                <div class="brand-summary">
+                    <h1 class="brand-system-name">
+                        ระบบจองห้องและพื้นที่ภาควิชา
+                    </h1>
+
+                    <p class="brand-description">
+                        ตรวจสอบตาราง ส่งคำขอจองพื้นที่
+                        และติดตามสถานะการอนุมัติผ่านระบบกลางของภาควิชา
+                    </p>
+                </div>
+
+                <footer class="brand-meta">
+                    <span>Faculty of Engineering, Chulalongkorn University</span>
+                    <span class="system-status">พร้อมใช้งาน</span>
+                </footer>
+            </aside>
+
+            <section class="form-panel">
+                <div class="form-wrap">
+
+                    <p class="form-context">ระบบจองห้องและพื้นที่</p>
+                    <h2 class="form-title">เข้าสู่ระบบ</h2>
+
+                    <p class="form-subtitle">
+                        กรอก Staff ID และรหัสผ่านเพื่อดำเนินการต่อ
+                    </p>
+
+                    <form id="login-form" novalidate>
+                        <div class="form-group">
+                            <label for="staffId" class="form-label">
+                                Staff ID
+                            </label>
+
+                            <div class="input-wrap">
+                                <svg
+                                    class="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true">
+                                    <path
+                                        d="M8 7.5A4 4 0 1 1 16 7.5A4 4 0 0 1 8 7.5Z"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"/>
+                                    <path
+                                        d="M4.5 20C4.9 15.9 7.4 14 12 14C16.6 14 19.1 15.9 19.5 20"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                        stroke-linecap="round"/>
+                                </svg>
+
+                                <input
+                                    type="text"
+                                    id="staffId"
+                                    class="form-input"
+                                    required
+                                    aria-describedby="staff-id-note"
+                                    placeholder="Staff ID"
+                                    autocomplete="username"
+                                    autocapitalize="none"
+                                    autocorrect="off"
+                                    spellcheck="false">
+                            </div>
+
+                            <p id="staff-id-note" class="input-note">
+                                รองรับทั้งตัวพิมพ์ใหญ่และตัวพิมพ์เล็ก
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label">
+                                Password
+                            </label>
+
+                            <div class="input-wrap">
+                                <svg
+                                    class="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true">
+                                    <rect
+                                        x="5"
+                                        y="10"
+                                        width="14"
+                                        height="10"
+                                        rx="2.4"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"/>
+                                    <path
+                                        d="M8.5 10V7.5A3.5 3.5 0 0 1 12 4A3.5 3.5 0 0 1 15.5 7.5V10"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                        stroke-linecap="round"/>
+                                </svg>
+
+                                <input
+                                    type="password"
+                                    id="password"
+                                    class="form-input"
+                                    required
+                                    placeholder="Password"
+                                    autocomplete="current-password">
+
+                                <button
+                                    type="button"
+                                    id="toggle-password"
+                                    class="password-toggle"
+                                    aria-label="แสดงรหัสผ่าน"
+                                    aria-pressed="false">
+                                    <svg
+                                        id="eye-open-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        aria-hidden="true">
+                                        <path
+                                            d="M2.8 12S6.2 6.8 12 6.8S21.2 12 21.2 12S17.8 17.2 12 17.2S2.8 12 2.8 12Z"
+                                            stroke="currentColor"
+                                            stroke-width="1.7"/>
+                                        <circle
+                                            cx="12"
+                                            cy="12"
+                                            r="2.4"
+                                            stroke="currentColor"
+                                            stroke-width="1.7"/>
+                                    </svg>
+
+                                    <svg
+                                        id="eye-closed-icon"
+                                        class="hidden"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        aria-hidden="true">
+                                        <path
+                                            d="M4 4L20 20"
+                                            stroke="currentColor"
+                                            stroke-width="1.7"
+                                            stroke-linecap="round"/>
+                                        <path
+                                            d="M9.8 7.1A8.8 8.8 0 0 1 12 6.8C17.8 6.8 21.2 12 21.2 12A16 16 0 0 1 18.6 15.1"
+                                            stroke="currentColor"
+                                            stroke-width="1.7"
+                                            stroke-linecap="round"/>
+                                        <path
+                                            d="M14.1 16.9A8.8 8.8 0 0 1 12 17.2C6.2 17.2 2.8 12 2.8 12A16 16 0 0 1 5.3 9"
+                                            stroke="currentColor"
+                                            stroke-width="1.7"
+                                            stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <p
+                            id="error-msg"
+                            class="error-message hidden"
+                            role="alert"
+                            aria-live="polite">
+                            ID หรือ Password ไม่ถูกต้อง
+                        </p>
+
+                        <button
+                            type="submit"
+                            id="login-btn"
+                            class="submit-button">
+                            <span id="login-btn-content">
+                                เข้าสู่ระบบ
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="support-note">
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true">
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="9"
+                                stroke="currentColor"
+                                stroke-width="1.6"/>
+                            <path
+                                d="M12 11.2V16"
+                                stroke="currentColor"
+                                stroke-width="1.7"
+                                stroke-linecap="round"/>
+                            <circle
+                                cx="12"
+                                cy="8"
+                                r="1"
+                                fill="currentColor"/>
+                        </svg>
+
+                        <span>
+                            หากไม่สามารถเข้าสู่ระบบได้
+                            กรุณาตรวจสอบ Staff ID และรหัสผ่าน
+                            หรือติดต่อผู้ดูแลระบบของภาควิชา
+                        </span>
+                    </div>
+
+                    <footer class="form-footer">
+                        © 2026 Department of Mining and Petroleum Engineering<br>
+                        Faculty of Engineering, Chulalongkorn University
+                    </footer>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="js/config.js?v=999"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
