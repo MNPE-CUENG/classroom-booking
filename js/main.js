@@ -8,6 +8,8 @@ let roomList = [];
 let roomImages = {};
 let globalBookings = []; 
 let globalTimetable = []; 
+let compactScheduleDate = "";
+let compactScheduleEventMap = {};
 
 const timeSlots = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -209,6 +211,486 @@ function populateTimeDropdowns(startId, endId) {
     });
 }
 
+
+function compactEscapeHtml(value) {
+    return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function compactLocalToday() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function compactDateFromParts(dateString) {
+    const parts = String(dateString || "").split("-").map(Number);
+    if (parts.length !== 3 || parts.some(value => !Number.isFinite(value))) {
+        return null;
+    }
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function compactDateToYmd(date) {
+    return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0")
+    ].join("-");
+}
+
+function compactShiftDateValue(dateString, amount) {
+    const date = compactDateFromParts(dateString);
+    if (!date) return compactLocalToday();
+    date.setDate(date.getDate() + amount);
+    return compactDateToYmd(date);
+}
+
+function compactFormatDate(dateString) {
+    const date = compactDateFromParts(dateString);
+    if (!date) return dateString || "";
+    return date.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    });
+}
+
+function compactNormalizeDate(value) {
+    const raw = String(value == null ? "" : value).trim();
+    if (!raw) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+    const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+        return [
+            slash[3],
+            String(slash[2]).padStart(2, "0"),
+            String(slash[1]).padStart(2, "0")
+        ].join("-");
+    }
+    return raw;
+}
+
+function compactTimeToMinutes(value) {
+    const match = String(value || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+    return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function compactParseRange(value) {
+    const parts = String(value || "").split(/\s*-\s*/);
+    if (parts.length !== 2) return null;
+
+    const start = compactTimeToMinutes(parts[0]);
+    const end = compactTimeToMinutes(parts[1]);
+
+    if (start == null || end == null || end <= start) return null;
+    return {
+        start,
+        end,
+        startLabel: parts[0].trim(),
+        endLabel: parts[1].trim()
+    };
+}
+
+function compactTimetableMatchesDate(item, room, selectedDate) {
+    if (String(item.Room || "").trim() !== String(room || "").trim()) return false;
+
+    const date = compactDateFromParts(selectedDate);
+    if (!date) return false;
+
+    const dayName = daysOfWeek[date.getDay()].toLowerCase();
+    if (String(item.DayOfWeek || "").trim().toLowerCase() !== dayName) return false;
+
+    const startDate = compactNormalizeDate(item.Start_Date);
+    const endDate = compactNormalizeDate(item.End_Date);
+
+    if (startDate && selectedDate < startDate) return false;
+    if (endDate && selectedDate > endDate) return false;
+
+    const exceptions = String(item.Exception_Dates || "")
+        .split(",")
+        .map(value => compactNormalizeDate(value))
+        .filter(Boolean);
+
+    return !exceptions.includes(selectedDate);
+}
+
+function compactBuildEvents(selectedDate) {
+    const startBoundary = 8 * 60;
+    const endBoundary = 21 * 60 + 30;
+    const events = [];
+
+    roomList.forEach(room => {
+        globalTimetable.forEach(item => {
+            if (!compactTimetableMatchesDate(item, room, selectedDate)) return;
+
+            const range = compactParseRange(item.TimeRange);
+            if (!range || range.end <= startBoundary || range.start >= endBoundary) return;
+
+            events.push({
+                kind: "class",
+                room,
+                start: Math.max(range.start, startBoundary),
+                end: Math.min(range.end, endBoundary),
+                startLabel: range.startLabel,
+                endLabel: range.endLabel,
+                title: item.Course_ID || item.Course || "Scheduled class",
+                secondary: item.Course || "",
+                person: item.Lecturer || ""
+            });
+        });
+
+        globalBookings.forEach(booking => {
+            const parsed = parseStatus(booking.Status);
+            if (parsed.status !== "Approved") return;
+            if (String(booking.Room || "").trim() !== String(room || "").trim()) return;
+            if (compactNormalizeDate(booking.Date) !== selectedDate) return;
+
+            const range = compactParseRange(booking.TimeRange);
+            if (!range || range.end <= startBoundary || range.start >= endBoundary) return;
+
+            events.push({
+                kind: "booking",
+                room,
+                start: Math.max(range.start, startBoundary),
+                end: Math.min(range.end, endBoundary),
+                startLabel: range.startLabel,
+                endLabel: range.endLabel,
+                title: booking.Name || "Reservation",
+                secondary: booking.Reason || "Room reservation",
+                person: "Approved reservation"
+            });
+        });
+    });
+
+    return events.sort((a, b) => {
+        if (a.room !== b.room) return a.room.localeCompare(b.room);
+        return a.start - b.start;
+    });
+}
+
+function compactPositionPopover() {
+    const popover = document.getElementById("compact-schedule-popover");
+    const button = document.getElementById("compact-schedule-trigger");
+    if (!popover || !button || popover.hidden) return;
+
+    if (window.innerWidth <= 640) {
+        popover.style.left = "10px";
+        popover.style.right = "10px";
+        popover.style.top = "auto";
+        popover.style.bottom = "10px";
+        return;
+    }
+
+    popover.style.right = "auto";
+    popover.style.bottom = "auto";
+
+    const rect = button.getBoundingClientRect();
+    const width = Math.min(520, window.innerWidth - 32);
+    const left = Math.min(
+        Math.max(16, rect.right - width),
+        window.innerWidth - width - 16
+    );
+
+    popover.style.width = `${width}px`;
+    popover.style.left = `${left}px`;
+    popover.style.top = `${rect.bottom + 8}px`;
+
+    requestAnimationFrame(() => {
+        const popoverRect = popover.getBoundingClientRect();
+        if (popoverRect.bottom > window.innerHeight - 16) {
+            const top = Math.max(16, rect.top - popoverRect.height - 8);
+            popover.style.top = `${top}px`;
+        }
+    });
+}
+
+function initializeCompactSchedule() {
+    const dateInput = document.getElementById("view-date");
+    if (!dateInput || document.getElementById("compact-schedule-trigger")) return;
+
+    const dateControl = dateInput.parentElement;
+    const toolbar = document.createElement("div");
+    toolbar.className = "compact-schedule-toolbar";
+    toolbar.id = "compact-schedule-toolbar";
+
+    dateControl.parentNode.insertBefore(toolbar, dateControl);
+    toolbar.appendChild(dateControl);
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.id = "compact-schedule-trigger";
+    trigger.className = "compact-schedule-trigger";
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-controls", "compact-schedule-popover");
+    trigger.title = "Open compact timetable";
+    trigger.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="1.5"></rect>
+            <path d="M3.5 9.5h17M9 4.5v15M14.5 4.5v15"></path>
+        </svg>
+        <span>Compact view</span>
+    `;
+    trigger.addEventListener("click", event => {
+        event.stopPropagation();
+        toggleCompactSchedule();
+    });
+    toolbar.appendChild(trigger);
+
+    const popover = document.createElement("section");
+    popover.id = "compact-schedule-popover";
+    popover.className = "compact-schedule-popover";
+    popover.hidden = true;
+    popover.setAttribute("role", "dialog");
+    popover.setAttribute("aria-modal", "false");
+    popover.setAttribute("aria-label", "Compact timetable");
+    popover.addEventListener("click", event => event.stopPropagation());
+    document.body.appendChild(popover);
+
+    document.addEventListener("click", closeCompactSchedule);
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeCompactSchedule();
+    });
+    window.addEventListener("resize", compactPositionPopover);
+    window.addEventListener("scroll", compactPositionPopover, true);
+}
+
+function toggleCompactSchedule() {
+    const popover = document.getElementById("compact-schedule-popover");
+    const button = document.getElementById("compact-schedule-trigger");
+    if (!popover || !button) return;
+
+    if (!popover.hidden) {
+        closeCompactSchedule();
+        return;
+    }
+
+    compactScheduleDate =
+        document.getElementById("view-date")?.value ||
+        compactScheduleDate ||
+        compactLocalToday();
+
+    popover.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    renderCompactSchedule();
+    compactPositionPopover();
+}
+
+function closeCompactSchedule() {
+    const popover = document.getElementById("compact-schedule-popover");
+    const button = document.getElementById("compact-schedule-trigger");
+    if (popover) popover.hidden = true;
+    if (button) button.setAttribute("aria-expanded", "false");
+}
+
+function shiftCompactScheduleDate(amount) {
+    compactScheduleDate = compactShiftDateValue(
+        compactScheduleDate || compactLocalToday(),
+        amount
+    );
+    renderCompactSchedule();
+}
+
+function setCompactScheduleToday() {
+    compactScheduleDate = compactLocalToday();
+    renderCompactSchedule();
+}
+
+function handleCompactScheduleDateChange(value) {
+    if (!value) return;
+    compactScheduleDate = value;
+    renderCompactSchedule();
+}
+
+function openCompactDateInFullView() {
+    const dateInput = document.getElementById("view-date");
+    if (!dateInput || !compactScheduleDate) return;
+
+    dateInput.value = compactScheduleDate;
+    closeCompactSchedule();
+    loadSchedule(true);
+}
+
+function showCompactScheduleDetail(eventId) {
+    const eventData = compactScheduleEventMap[eventId];
+    const detail = document.getElementById("compact-schedule-detail");
+    if (!eventData || !detail) return;
+
+    const kindLabel = eventData.kind === "class"
+        ? "Scheduled class"
+        : "Approved reservation";
+
+    const secondary = eventData.secondary
+        ? `<div>${compactEscapeHtml(eventData.secondary)}</div>`
+        : "";
+
+    const person = eventData.person
+        ? `<div>${compactEscapeHtml(eventData.person)}</div>`
+        : "";
+
+    detail.innerHTML = `
+        <p class="compact-schedule-detail-title">${compactEscapeHtml(eventData.title)}</p>
+        <div>${compactEscapeHtml(kindLabel)} · ${compactEscapeHtml(eventData.room)}</div>
+        <div>${compactEscapeHtml(eventData.startLabel)}–${compactEscapeHtml(eventData.endLabel)}</div>
+        ${secondary}
+        ${person}
+    `;
+    detail.hidden = false;
+}
+
+function renderCompactSchedule() {
+    const popover = document.getElementById("compact-schedule-popover");
+    if (!popover || popover.hidden) return;
+
+    const selectedDate = compactScheduleDate || compactLocalToday();
+    const allEvents = compactBuildEvents(selectedDate);
+    compactScheduleEventMap = {};
+
+    const startBoundary = 8 * 60;
+    const endBoundary = 21 * 60 + 30;
+    const totalMinutes = endBoundary - startBoundary;
+    const hourLabels = [
+        { label: "08", minute: 8 * 60 },
+        { label: "10", minute: 10 * 60 },
+        { label: "12", minute: 12 * 60 },
+        { label: "14", minute: 14 * 60 },
+        { label: "16", minute: 16 * 60 },
+        { label: "18", minute: 18 * 60 },
+        { label: "20", minute: 20 * 60 },
+        { label: "21:30", minute: 21 * 60 + 30 }
+    ];
+
+    const labelsHTML = hourLabels.map(item => {
+        const left = ((item.minute - startBoundary) / totalMinutes) * 100;
+        const clampedLeft = Math.max(0, Math.min(100, left));
+        return `
+            <span class="compact-schedule-time-label" style="left:${clampedLeft}%">
+                ${item.label}
+            </span>
+        `;
+    }).join("");
+
+    const rowsHTML = roomList.map((room, roomIndex) => {
+        const roomEvents = allEvents.filter(eventData => eventData.room === room);
+
+        const eventHTML = roomEvents.map((eventData, eventIndex) => {
+            const id = `compact-event-${roomIndex}-${eventIndex}`;
+            compactScheduleEventMap[id] = eventData;
+
+            const left = ((eventData.start - startBoundary) / totalMinutes) * 100;
+            const width = ((eventData.end - eventData.start) / totalMinutes) * 100;
+            const kindClass = eventData.kind === "class"
+                ? "compact-schedule-event--class"
+                : "compact-schedule-event--booking";
+
+            const tooltip = [
+                eventData.title,
+                eventData.secondary,
+                eventData.startLabel + "–" + eventData.endLabel
+            ].filter(Boolean).join(" · ");
+
+            return `
+                <button
+                    type="button"
+                    class="compact-schedule-event ${kindClass}"
+                    style="left:${left}%;width:${Math.max(width, 0.8)}%"
+                    title="${compactEscapeHtml(tooltip)}"
+                    onclick="showCompactScheduleDetail('${id}')">
+                    ${compactEscapeHtml(eventData.title)}
+                </button>
+            `;
+        }).join("");
+
+        return `
+            <div class="compact-schedule-row">
+                <div class="compact-schedule-room" title="${compactEscapeHtml(room)}">
+                    <span>${compactEscapeHtml(room)}</span>
+                </div>
+                <div class="compact-schedule-track">${eventHTML}</div>
+            </div>
+        `;
+    }).join("");
+
+    const gridHTML = roomList.length
+        ? `
+            <div class="compact-schedule-grid">
+                <div class="compact-schedule-row">
+                    <div class="compact-schedule-room compact-schedule-time-room">
+                        <span>Room</span>
+                    </div>
+                    <div class="compact-schedule-track compact-schedule-time-track">
+                        ${labelsHTML}
+                    </div>
+                </div>
+                ${rowsHTML}
+            </div>
+        `
+        : `<div class="compact-schedule-empty">No room data is available.</div>`;
+
+    popover.innerHTML = `
+        <div class="compact-schedule-header">
+            <div>
+                <p class="compact-schedule-kicker">Quick room overview</p>
+                <h3 class="compact-schedule-title">Compact timetable</h3>
+                <p class="compact-schedule-date-label">${compactEscapeHtml(compactFormatDate(selectedDate))}</p>
+            </div>
+            <button
+                type="button"
+                class="compact-schedule-close"
+                onclick="closeCompactSchedule()"
+                aria-label="Close compact timetable">
+                &times;
+            </button>
+        </div>
+
+        <div class="compact-schedule-controls">
+            <button type="button" class="compact-schedule-control-button" onclick="shiftCompactScheduleDate(-1)" aria-label="Previous day">‹</button>
+            <input
+                type="date"
+                class="compact-schedule-date-input"
+                value="${compactEscapeHtml(selectedDate)}"
+                onchange="handleCompactScheduleDateChange(this.value)">
+            <button type="button" class="compact-schedule-today-button" onclick="setCompactScheduleToday()">Today</button>
+            <button type="button" class="compact-schedule-control-button" onclick="shiftCompactScheduleDate(1)" aria-label="Next day">›</button>
+        </div>
+
+        <div class="compact-schedule-content custom-scrollbar">
+            ${gridHTML}
+        </div>
+
+        <div class="compact-schedule-legend">
+            <span class="compact-schedule-legend-item">
+                <span class="compact-schedule-legend-swatch compact-schedule-event--class"></span>
+                Scheduled class
+            </span>
+            <span class="compact-schedule-legend-item">
+                <span class="compact-schedule-legend-swatch compact-schedule-event--booking"></span>
+                Approved reservation
+            </span>
+        </div>
+
+        <div id="compact-schedule-detail" class="compact-schedule-detail" hidden></div>
+
+        <div class="compact-schedule-footer">
+            <button type="button" class="compact-schedule-open-full" onclick="openCompactDateInFullView()">
+                Open in full timetable
+            </button>
+        </div>
+    `;
+
+    compactPositionPopover();
+}
+
+
 window.onload = function() {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -269,6 +751,347 @@ window.onload = function() {
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
         }
+
+        .compact-schedule-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .compact-schedule-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 8px 11px;
+            border: 1px solid #cfd5df;
+            border-radius: 5px;
+            color: #344054;
+            background: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+        }
+        .compact-schedule-trigger:hover,
+        .compact-schedule-trigger[aria-expanded="true"] {
+            border-color: #23376f;
+            color: #172554;
+            background: #f7f8fc;
+        }
+        .compact-schedule-trigger svg {
+            width: 17px;
+            height: 17px;
+        }
+        .compact-schedule-popover {
+            position: fixed;
+            z-index: 9998;
+            width: min(520px, calc(100vw - 32px));
+            max-height: min(620px, calc(100vh - 32px));
+            overflow: hidden;
+            border: 1px solid #cfd5df;
+            border-radius: 7px;
+            background: #ffffff;
+            box-shadow: 0 16px 42px rgba(15, 23, 42, 0.18);
+        }
+        .compact-schedule-popover[hidden] {
+            display: none !important;
+        }
+        .compact-schedule-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .compact-schedule-kicker {
+            margin: 0;
+            color: #667085;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .compact-schedule-title {
+            margin: 3px 0 0;
+            color: #1f2937;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+        .compact-schedule-date-label {
+            margin: 3px 0 0;
+            color: #667085;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+        .compact-schedule-close {
+            display: grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid #d0d5dd;
+            border-radius: 4px;
+            color: #667085;
+            background: #ffffff;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .compact-schedule-close:hover {
+            color: #1f2937;
+            background: #f9fafb;
+        }
+        .compact-schedule-controls {
+            display: grid;
+            grid-template-columns: 34px minmax(150px, 1fr) auto 34px;
+            gap: 7px;
+            padding: 11px 16px;
+            border-bottom: 1px solid #eaecf0;
+            background: #f9fafb;
+        }
+        .compact-schedule-control-button,
+        .compact-schedule-today-button {
+            min-height: 34px;
+            border: 1px solid #d0d5dd;
+            border-radius: 4px;
+            color: #344054;
+            background: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .compact-schedule-control-button:hover,
+        .compact-schedule-today-button:hover {
+            border-color: #98a2b3;
+            background: #f9fafb;
+        }
+        .compact-schedule-date-input {
+            width: 100%;
+            min-height: 34px;
+            border: 1px solid #d0d5dd;
+            border-radius: 4px;
+            padding: 5px 8px;
+            color: #344054;
+            background: #ffffff;
+            font-size: 11px;
+            outline: none;
+        }
+        .compact-schedule-date-input:focus {
+            border-color: #475d9d;
+            box-shadow: 0 0 0 2px rgba(71, 93, 157, 0.10);
+        }
+        .compact-schedule-content {
+            max-height: 390px;
+            overflow: auto;
+            overscroll-behavior: contain;
+        }
+        .compact-schedule-grid {
+            min-width: 438px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .compact-schedule-row {
+            display: grid;
+            grid-template-columns: 104px minmax(334px, 1fr);
+            min-height: 35px;
+            border-top: 1px solid #eef0f3;
+        }
+        .compact-schedule-row:first-child {
+            border-top: 0;
+        }
+        .compact-schedule-room {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            padding: 7px 9px;
+            border-right: 1px solid #e5e7eb;
+            color: #344054;
+            background: #ffffff;
+            font-size: 10px;
+            font-weight: 650;
+            line-height: 1.3;
+        }
+        .compact-schedule-room span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .compact-schedule-time-room {
+            color: #667085;
+            background: #f9fafb;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .compact-schedule-track {
+            position: relative;
+            min-width: 334px;
+            min-height: 35px;
+            background:
+                repeating-linear-gradient(
+                    to right,
+                    transparent 0,
+                    transparent calc(3.7037037% - 1px),
+                    #edf0f3 calc(3.7037037% - 1px),
+                    #edf0f3 3.7037037%
+                ),
+                #ffffff;
+        }
+        .compact-schedule-time-track {
+            min-height: 35px;
+            background:
+                repeating-linear-gradient(
+                    to right,
+                    transparent 0,
+                    transparent calc(3.7037037% - 1px),
+                    #e4e7ec calc(3.7037037% - 1px),
+                    #e4e7ec 3.7037037%
+                ),
+                #f9fafb;
+        }
+        .compact-schedule-time-label {
+            position: absolute;
+            top: 50%;
+            color: #667085;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 8px;
+            font-weight: 700;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+        .compact-schedule-event {
+            position: absolute;
+            top: 7px;
+            height: 21px;
+            min-width: 4px;
+            overflow: hidden;
+            border: 1px solid transparent;
+            border-left-width: 3px;
+            border-radius: 3px;
+            padding: 2px 5px;
+            text-align: left;
+            font-size: 8px;
+            font-weight: 700;
+            line-height: 15px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .compact-schedule-event--class {
+            border-color: #d9c49a;
+            border-left-color: #b7791f;
+            color: #694b16;
+            background: #fbf5e8;
+        }
+        .compact-schedule-event--booking {
+            border-color: #b8c9ed;
+            border-left-color: #3560ad;
+            color: #244278;
+            background: #edf3ff;
+        }
+        .compact-schedule-event:hover,
+        .compact-schedule-event:focus-visible {
+            filter: brightness(0.97);
+            outline: 2px solid rgba(35, 55, 111, 0.14);
+            outline-offset: 1px;
+        }
+        .compact-schedule-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 9px 16px;
+            border-top: 1px solid #eaecf0;
+            color: #667085;
+            background: #ffffff;
+            font-size: 9px;
+        }
+        .compact-schedule-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .compact-schedule-legend-swatch {
+            width: 18px;
+            height: 8px;
+            border: 1px solid;
+            border-left-width: 3px;
+            border-radius: 2px;
+        }
+        .compact-schedule-detail {
+            margin: 0 16px 12px;
+            padding: 10px 11px;
+            border: 1px solid #dfe3ea;
+            border-left: 3px solid #475d9d;
+            border-radius: 4px;
+            color: #475467;
+            background: #f8f9fb;
+            font-size: 10px;
+            line-height: 1.55;
+        }
+        .compact-schedule-detail[hidden] {
+            display: none !important;
+        }
+        .compact-schedule-detail-title {
+            margin: 0 0 3px;
+            color: #1f2937;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .compact-schedule-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 10px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .compact-schedule-open-full {
+            min-height: 34px;
+            border: 1px solid #23376f;
+            border-radius: 4px;
+            padding: 7px 12px;
+            color: #ffffff;
+            background: #23376f;
+            font-size: 10px;
+            font-weight: 650;
+            cursor: pointer;
+        }
+        .compact-schedule-open-full:hover {
+            background: #172554;
+        }
+        .compact-schedule-empty {
+            padding: 28px 16px;
+            color: #667085;
+            text-align: center;
+            font-size: 11px;
+        }
+        @media (max-width: 640px) {
+            .compact-schedule-popover {
+                left: 10px !important;
+                right: 10px !important;
+                bottom: 10px !important;
+                top: auto !important;
+                width: auto;
+                max-height: 72vh;
+                border-radius: 8px;
+            }
+            .compact-schedule-content {
+                max-height: 46vh;
+            }
+            .compact-schedule-controls {
+                grid-template-columns: 34px minmax(130px, 1fr) 34px;
+            }
+            .compact-schedule-today-button {
+                display: none;
+            }
+        }
+
     `;
     document.head.appendChild(style);
 
@@ -289,6 +1112,7 @@ window.onload = function() {
     }
 
     populateTimeDropdowns('startTime', 'endTime');
+    initializeCompactSchedule();
     loadSchedule();
     setInterval(() => { loadSchedule(true); }, 60000);
 };
@@ -312,6 +1136,7 @@ function switchTab(tabName) {
         tabTimetable.className = inactiveClass;
         contentTimetable.classList.add('hidden');
         contentMyBooking.classList.remove('hidden');
+        closeCompactSchedule();
     }
 }
 
@@ -459,6 +1284,9 @@ async function loadSchedule(isSilent = false) {
             });
             gridHTML += `</tbody></table></div>`;
             timetableContainer.innerHTML = gridHTML;
+            if (!document.getElementById('compact-schedule-popover')?.hidden) {
+                renderCompactSchedule();
+            }
 
             const safeCurrentId = String(currentUser.id).trim();
             const myBookings = globalBookings.filter(b => getUserIdSafe(b) === safeCurrentId);
