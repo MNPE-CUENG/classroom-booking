@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Space Reservation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        .admin-red { background-color: #8b0000; }
+        /* สไตล์ Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <header class="bg-white py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            
+            <!-- ฝั่งซ้าย: โลโก้และชื่อภาควิชา -->
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Logo" class="h-12 sm:h-16">
+                <div>
+                    <h1 class="text-sm sm:text-lg font-bold text-gray-800 leading-tight">Department of Mining and Petroleum Engineering</h1>
+                    <p class="text-[10px] sm:text-sm text-gray-600 uppercase tracking-tighter">Faculty of Engineering, Chulalongkorn University</p>
+                </div>
+            </div>
+
+            <!-- ฝั่งขวา: กลุ่มปุ่มเมนูจัดการบัญชี (มัดรวมกันเพื่อให้อยู่ชิดขวา) -->
+            <div class="flex items-center">
+                <!-- ปุ่มเปลี่ยนรหัสผ่าน (ไม่มีอีโมจิ สไตล์มินิมอล) -->
+                <button onclick="openPasswordModal()" class="text-xs font-bold text-gray-500 hover:text-indigo-600 transition-colors uppercase tracking-wider mr-3 sm:mr-4">
+                    Change Password
+                </button>
+                
+                <!-- เส้นคั่นแนวตั้ง (Divider) -->
+                <div class="h-4 w-px bg-gray-300 mr-3 sm:mr-4"></div>
+                
+                <!-- ปุ่มออกจากระบบ (มีกรอบ ดูเป็นปุ่ม Action หลัก) -->
+                <button onclick="logout()" class="text-xs border border-gray-300 text-gray-600 px-3 py-1.5 rounded hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all uppercase font-bold whitespace-nowrap">
+                    Sign Out
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <nav class="admin-red shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="text-white font-bold tracking-widest text-sm uppercase">Admin Control</span>
+            </div>
+            <div id="admin-display" class="text-white/90 text-xs italic font-medium bg-black/20 px-3 py-1 rounded-full">
+                ADMINISTRATION PANEL
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 flex flex-col">
+        
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 w-full overflow-hidden flex flex-col">
+            
+            <div class="flex border-b border-gray-200 mb-6 justify-between items-end flex-wrap gap-4">
+                <div class="flex gap-2 overflow-x-auto custom-scrollbar w-full sm:w-auto">
+                    <button id="tab-management" onclick="switchAdminTab('management')" 
+                        class="py-3 px-6 font-bold text-sm border-b-2 border-indigo-600 text-indigo-700 focus:outline-none uppercase tracking-wide whitespace-nowrap transition-colors">
+                        Booking Management
+                    </button>
+                    <button id="tab-room-status" onclick="switchAdminTab('room-status')" 
+                        class="py-3 px-6 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300 focus:outline-none uppercase tracking-wide whitespace-nowrap transition-colors">
+                        Room Status Grid
+                    </button>
+                    <button id="tab-admin-book" onclick="switchAdminTab('admin-book')" 
+                        class="py-3 px-6 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300 focus:outline-none uppercase tracking-wide whitespace-nowrap transition-colors">
+                        ➕ Quick Book (Auto-Approve)
+                    </button>
+
+                </div>
+                <button onclick="loadAdminSchedule()" class="text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-sm transition-colors border border-gray-300 flex items-center gap-2">
+                    ↻ Refresh Data
+                </button>
+            </div>
+            
+            <div id="content-management" class="w-full">
+                <div id="admin-table-container" class="w-full"></div>
+            </div>
+
+            <div id="content-room-status" class="hidden space-y-4 w-full">
+                <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border w-full sm:w-fit">
+                    <label for="admin-view-date" class="text-sm font-semibold text-gray-700 whitespace-nowrap">Select Date:</label>
+                    <input type="date" id="admin-view-date" onchange="loadAdminSchedule()" 
+                        class="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-600 w-full sm:w-auto">
+                </div>
+                <div id="admin-timetable-container" class="w-full"></div>
+            </div>
+            <div id="content-admin-book" class="hidden w-full max-w-lg mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-4">
+                <h2 class="text-lg font-bold mb-4 text-gray-800 border-b border-gray-200 pb-3">Quick Reservation (Admin Bypass)</h2>
+                <form id="admin-booking-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Admin Name</label>
+                        <input type="text" id="admin-name" readonly required class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500 cursor-not-allowed">
+                        <input type="hidden" id="admin-staffId">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Room Selection</label>
+                        <select id="admin-room" required class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Reservation Date</label>
+                        <input type="date" id="admin-date" required class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1">
+                        <p class="text-[10px] text-gray-500 mt-1">* Admins can select any past or future date.</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Start Time</label>
+                            <select id="admin-startTime" required class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1"></select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">End Time</label>
+                            <select id="admin-endTime" required class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1"></select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Purpose</label>
+                        <textarea id="admin-reason" rows="2" required placeholder="Reason for booking..." class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1"></textarea>
+                    </div>
+                    <button type="submit" id="admin-submit-btn" class="w-full flex justify-center py-3 px-4 rounded-md shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all uppercase mt-2">
+                        Force Book (Auto-Approve)
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="js/config.js?v=999"></script>
+    <script src="js/admin.js?v=20260721-formal-ui-2"></script>
+
+    <div id="password-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 transform transition-all border border-gray-100 mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-800 tracking-wide uppercase">Change Password</h3>
+                <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+            </div>
+            
+            <form id="change-password-form" onsubmit="handleChangePasswordSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Current Password</label>
+                    <input type="password" id="old-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1 bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
+                    <input type="password" id="new-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Confirm New Password</label>
+                    <input type="password" id="confirm-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-600 focus:ring-1">
+                </div>
+                
+                <button type="submit" id="change-pw-submit-btn" onclick="handleChangePasswordSubmit(event)" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all uppercase tracking-widest text-xs mt-4 shadow-md">
+                    Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- ==========================================
+         DECLINE REQUEST MODAL
+         บังคับกรอกเหตุผลก่อนปฏิเสธ
+    =========================================== -->
+    <div id="decline-modal"
+         onclick="closeDeclineModal()"
+         class="hidden fixed inset-0 z-[10020] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6">
+
+        <div onclick="event.stopPropagation()"
+             class="w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+
+            <div class="flex items-start justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">
+                        Decline Booking Request
+                    </h3>
+                    <p class="mt-1 text-[11px] leading-relaxed text-gray-500">
+                        กรุณาตรวจสอบข้อมูลและระบุเหตุผลก่อนยืนยันการปฏิเสธ
+                    </p>
+                </div>
+
+                <button type="button"
+                        onclick="closeDeclineModal()"
+                        aria-label="Close"
+                        class="ml-4 text-2xl font-bold leading-none text-gray-400 hover:text-gray-700">
+                    &times;
+                </button>
+            </div>
+
+            <form id="decline-form"
+                  onsubmit="handleDeclineSubmit(event)"
+                  class="space-y-5 p-6">
+
+                <input type="hidden" id="decline-booking-id">
+
+                <div class="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Requester
+                        </p>
+                        <p id="decline-requester" class="mt-1 text-sm font-bold text-gray-800">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Room
+                        </p>
+                        <p id="decline-room" class="mt-1 text-sm font-bold text-indigo-700">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Schedule
+                        </p>
+                        <p id="decline-schedule" class="mt-1 text-xs font-medium text-gray-700">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            Request ID
+                        </p>
+                        <p id="decline-request-id" class="mt-1 break-all font-mono text-[11px] text-gray-600">-</p>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-1.5 flex items-center justify-between gap-4">
+                        <label for="decline-reason"
+                               class="text-xs font-bold text-gray-700">
+                            เหตุผลที่ไม่อนุมัติ
+                        </label>
+                        <span id="decline-reason-count"
+                              class="text-[10px] text-gray-400">
+                            0/300
+                        </span>
+                    </div>
+
+                    <textarea id="decline-reason"
+                              rows="4"
+                              maxlength="300"
+                              required
+                              oninput="updateDeclineCounter()"
+                              placeholder="ระบุเหตุผลอย่างชัดเจน เช่น ห้องมีการใช้งานในช่วงเวลาดังกล่าว"
+                              class="w-full resize-y rounded-lg border border-gray-300 px-3 py-3 text-sm leading-relaxed focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"></textarea>
+
+                    <p id="decline-reason-error"
+                       class="hidden mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                    </p>
+
+                    <p class="mt-2 text-[10px] leading-relaxed text-gray-500">
+                        เหตุผลนี้จะถูกบันทึกในสถานะคำขอ แสดงแก่ผู้จอง
+                        และรวมอยู่ในอีเมลแจ้งผล
+                    </p>
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            onclick="closeDeclineModal()"
+                            class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            id="decline-submit-btn"
+                            class="rounded-lg bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        Confirm Decline
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<!-- ==========================================
+     EMAIL PREVIEW MODAL
+     แสดงตัวอย่างเท่านั้น ไม่ส่งอีเมล
+=========================================== -->
+<div id="email-preview-modal"
+     onclick="closeEmailPreview()"
+     class="hidden fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6">
+
+    <div onclick="event.stopPropagation()"
+         class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">
+                    Email Preview
+                </h3>
+
+                <p class="text-[11px] text-gray-500 mt-1">
+                    ตัวอย่างข้อความจากข้อมูลปัจจุบัน การเปิดหน้าต่างนี้จะไม่ส่งอีเมลและไม่เปลี่ยนสถานะ
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="closeEmailPreview()"
+                    class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none ml-4">
+                &times;
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
+
+            <!-- Loading -->
+            <div id="email-preview-loading"
+                 class="hidden py-10 text-center">
+
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-indigo-700"></div>
+
+                <p class="text-xs text-gray-500 mt-3">
+                    กำลังสร้างตัวอย่างอีเมล...
+                </p>
+            </div>
+
+            <!-- Error -->
+            <div id="email-preview-error"
+                 class="hidden rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            </div>
+
+            <!-- Preview -->
+            <div id="email-preview-content"
+                 class="hidden space-y-5">
+
+                <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                        To
+                    </p>
+
+                    <div id="email-preview-to"
+                         class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 break-all">
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                        Subject
+                    </p>
+
+                    <div id="email-preview-subject"
+                         class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900">
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                        Message
+                    </p>
+
+                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                        <div class="h-2 bg-indigo-700"></div>
+
+                        <pre id="email-preview-body"
+                             class="whitespace-pre-wrap break-words p-5 text-sm leading-7 text-gray-800 font-sans"></pre>
+                    </div>
+                </div>
+
+                <div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p class="text-[11px] leading-relaxed text-amber-800">
+                        หมายเหตุ: ระบบเดิมไม่ได้เก็บสำเนาอีเมลหรือสถานะการส่งสำเร็จ
+                        หน้าต่างนี้จึงแสดงข้อความที่สร้างใหม่จากข้อมูล Booking และรูปแบบอีเมลปัจจุบัน
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button type="button"
+                        onclick="closeEmailPreview()"
+                        class="rounded-lg bg-gray-800 px-5 py-2.5 text-xs font-bold text-white hover:bg-gray-900 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
