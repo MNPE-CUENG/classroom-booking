@@ -294,7 +294,7 @@ function initializeAdminCompactSchedule() {
 
     const dateControl = dateInput.parentElement;
     const toolbar = document.createElement("div");
-    toolbar.className = "admin-compact-schedule-toolbar";
+    toolbar.className = "compact-schedule-toolbar";
     toolbar.id = "admin-compact-schedule-toolbar";
 
     dateControl.parentNode.insertBefore(toolbar, dateControl);
@@ -303,14 +303,18 @@ function initializeAdminCompactSchedule() {
     const trigger = document.createElement("button");
     trigger.type = "button";
     trigger.id = "admin-compact-schedule-trigger";
-    trigger.className = "admin-compact-schedule-trigger";
+    trigger.className = "compact-schedule-trigger";
     trigger.setAttribute("aria-expanded", "false");
     trigger.setAttribute("aria-controls", "admin-compact-schedule-popover");
     trigger.title = "Open compact timetable";
     trigger.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <rect x="3.5" y="4.5" width="17" height="15" rx="1.5"></rect>
-            <path d="M3.5 9.5h17M9 4.5v15M14.5 4.5v15"></path>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect>
+            <path d="M3.5 9.5h17"></path>
+            <path d="M9 9.5v10"></path>
+            <path d="M15 9.5v10"></path>
         </svg>
         <span>Compact view</span>
     `;
@@ -322,7 +326,7 @@ function initializeAdminCompactSchedule() {
 
     const popover = document.createElement("section");
     popover.id = "admin-compact-schedule-popover";
-    popover.className = "admin-compact-schedule-popover";
+    popover.className = "compact-schedule-popover";
     popover.hidden = true;
     popover.setAttribute("role", "dialog");
     popover.setAttribute("aria-modal", "false");
@@ -513,7 +517,6 @@ function renderAdminCompactSchedule() {
     popover.innerHTML = `
         <div class="compact-schedule-header">
             <div>
-                <p class="compact-schedule-kicker">Quick room overview</p>
                 <h3 class="compact-schedule-title">Compact room timetable</h3>
                 <p class="compact-schedule-date-label">${adminCompactEscapeHtml(adminCompactFormatDate(selectedDate))}</p>
             </div>
@@ -628,10 +631,12 @@ window.onload = function() {
 
         .compact-schedule-toolbar {
             display: flex;
+            width: 100%;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            margin-bottom: 10px;
         }
         .compact-schedule-trigger {
             display: inline-flex;
@@ -656,8 +661,10 @@ window.onload = function() {
             background: #f7f8fc;
         }
         .compact-schedule-trigger svg {
-            width: 17px;
-            height: 17px;
+            display: block;
+            width: 16px;
+            height: 16px;
+            flex: 0 0 16px;
         }
         .compact-schedule-popover {
             position: fixed;
@@ -946,6 +953,12 @@ window.onload = function() {
             font-size: 11px;
         }
         @media (max-width: 640px) {
+            .compact-schedule-toolbar {
+                flex-wrap: wrap;
+            }
+            .compact-schedule-trigger {
+                margin-left: auto;
+            }
             .compact-schedule-popover {
                 left: 10px !important;
                 right: 10px !important;
