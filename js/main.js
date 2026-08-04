@@ -1203,7 +1203,7 @@ async function loadSchedule(isSilent = false) {
             let gridHTML = `<div class="scroll-wrapper border border-gray-300 rounded-lg bg-white custom-scrollbar pb-2 pr-6">
                 <table class="w-max min-w-full text-left bg-white border-collapse">
                 <thead class="bg-gray-50 text-gray-600 font-bold text-[11px] uppercase tracking-wider">
-                    <tr><th class="px-5 py-4 border-b border-r border-gray-200 sticky-col min-w-[140px] max-w-[140px] z-30">Room / Time</th>`;
+                    <tr><th class="px-5 py-4 border-b border-r border-gray-200 sticky-col min-w-[220px] max-w-[220px] z-30">Room / Time</th>`;
             
             timeSlots.forEach((slot, index) => { 
                 gridHTML += `<th class="border-b border-l border-gray-200 bg-gray-50 min-w-[100px] h-12 relative">
@@ -1217,7 +1217,7 @@ async function loadSchedule(isSilent = false) {
 
             roomList.forEach(room => {
                 gridHTML += `<tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-200 sticky-col-white min-w-[140px] max-w-[140px] truncate z-20" title="${room}">${room}</td>`;
+                    <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-200 sticky-col-white min-w-[220px] max-w-[220px] truncate z-20" title="${room}">${room}</td>`;
                 
                 for (let i = 0; i < timeSlots.length; i++) {
                     const slot = timeSlots[i];
