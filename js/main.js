@@ -121,7 +121,7 @@ function checkNotifications(myBookings) {
             : '';
 
         return `
-            <section class="rounded-sm border border-gray-200 border-l-4 bg-white p-4 ${theme.panelClass}">
+            <section class="rounded-sm border border-gray-300 border-l-4 bg-white p-4 ${theme.panelClass}">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div class="min-w-0">
                         <p class="text-sm font-semibold text-gray-900">${booking.Room}</p>
@@ -146,7 +146,7 @@ function checkNotifications(myBookings) {
             onclick="if (event.target === this) closeNotificationModal()">
 
             <div class="w-full max-w-md overflow-hidden rounded-md border border-gray-300 bg-white shadow-xl">
-                <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+                <div class="flex items-start justify-between gap-4 border-b border-gray-300 px-5 py-4">
                     <div>
                         <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
                             Reservation notice
@@ -172,7 +172,7 @@ function checkNotifications(myBookings) {
                     ${itemsHTML}
                 </div>
 
-                <div class="flex justify-end border-t border-gray-200 bg-gray-50 px-5 py-3">
+                <div class="flex justify-end border-t border-gray-300 bg-gray-50 px-5 py-3">
                     <button
                         type="button"
                         onclick="closeNotificationModal()"
@@ -1149,7 +1149,7 @@ async function loadSchedule(isSilent = false) {
         const loadingHTML = `
             <div class="py-16 flex flex-col justify-center items-center animate-in fade-in duration-500">
                 <div class="relative flex justify-center items-center w-20 h-20 mb-6">
-                    <div class="absolute inset-0 border-[1.5px] border-gray-200 rounded-full"></div>
+                    <div class="absolute inset-0 border-[1.5px] border-gray-300 rounded-full"></div>
                     <div class="absolute inset-0 border-[1.5px] border-t-indigo-800 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                     <img src="logo.png" alt="Logo" class="w-11 h-11 object-contain opacity-90">
                 </div>
@@ -1203,7 +1203,7 @@ async function loadSchedule(isSilent = false) {
             let gridHTML = `<div class="scroll-wrapper border border-gray-300 rounded-lg bg-white custom-scrollbar pb-2 pr-6">
                 <table class="w-max min-w-full text-left bg-white border-collapse">
                 <thead class="bg-gray-50 text-gray-600 font-bold text-[11px] uppercase tracking-wider">
-                    <tr><th class="px-5 py-4 border-b border-r border-gray-200 sticky-col min-w-[200px] max-w-[200px] z-30">Room / Time</th>`;
+                    <tr><th class="px-5 py-4 border-b border-r border-gray-300 sticky-col min-w-[200px] max-w-[200px] z-30">Room / Time</th>`;
             
             timeSlots.forEach((slot, index) => { 
                     const alignClass = index === 0 ? "left-1.5 -translate-x-0" : "left-0 -translate-x-1/2";
@@ -1218,7 +1218,7 @@ async function loadSchedule(isSilent = false) {
 
             roomList.forEach(room => {
                 gridHTML += `<tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-200 sticky-col-white min-w-[200px] max-w-[200px] truncate z-20" title="${room}">${room}</td>`;
+                    <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-300 sticky-col-white min-w-[200px] max-w-[200px] truncate z-20" title="${room}">${room}</td>`;
                 
                 for (let i = 0; i < timeSlots.length; i++) {
                     const slot = timeSlots[i];
@@ -1278,7 +1278,7 @@ async function loadSchedule(isSilent = false) {
                         </td>`;
                         i += (span - 1);
                     } else {
-                        gridHTML += `<td class="p-2 border-b border-l border-gray-100 min-w-[100px]"></td>`;
+                        gridHTML += `<td class="p-2 border-b border-l border-gray-300 min-w-[100px]"></td>`;
                     }
                 }
                 gridHTML += `</tr>`;
@@ -1307,14 +1307,14 @@ async function loadSchedule(isSilent = false) {
                 return;
             }
 
-            let myListHTML = headerHTML + `<div class="scroll-wrapper border border-gray-200 rounded-xl shadow-sm bg-white pb-2">
+            let myListHTML = headerHTML + `<div class="scroll-wrapper border border-gray-300 rounded-xl shadow-sm bg-white pb-2">
                 <table class="w-full min-w-max divide-y divide-gray-200 text-left text-sm border-collapse">
                     <thead class="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider text-[11px]">
                         <tr>
-                            <th class="px-5 py-4 border-b border-gray-200 whitespace-nowrap">Room</th>
-                            <th class="px-5 py-4 border-b border-gray-200 min-w-[160px]">Date & Time</th>
-                            <th class="px-5 py-4 border-b border-gray-200 min-w-[250px] max-w-sm">Purpose / Remarks</th>
-                            <th class="px-5 py-4 border-b border-gray-200 text-center whitespace-nowrap">Status</th>
+                            <th class="px-5 py-4 border-b border-gray-300 whitespace-nowrap">Room</th>
+                            <th class="px-5 py-4 border-b border-gray-300 min-w-[160px]">Date & Time</th>
+                            <th class="px-5 py-4 border-b border-gray-300 min-w-[250px] max-w-sm">Purpose / Remarks</th>
+                            <th class="px-5 py-4 border-b border-gray-300 text-center whitespace-nowrap">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">`;
