@@ -1207,7 +1207,7 @@ async function loadSchedule(isSilent = false) {
             
             timeSlots.forEach((slot, index) => { 
                     const alignClass = index === 0 ? "left-1.5 -translate-x-0" : "left-0 -translate-x-1/2";
-                    gridHTML += `<th class="border-b border-l border-gray-300 bg-gray-50 min-w-[100px] h-12 relative">
+                    gridHTML += `<th class="border-b border-l border-gray-300 bg-gray-50 h-12 relative" style="min-width: 120px; width: 120px;">
                     <div class="absolute ${alignClass} bottom-2 font-mono text-[11px] font-bold text-gray-600 bg-gray-50 px-1 z-0">${slot}</div>`;
                 if(index === timeSlots.length - 1) {
                     gridHTML += `<div class="absolute right-0 bottom-2 translate-x-1/2 font-mono text-[11px] font-bold text-gray-500 bg-gray-50 px-1 z-0">21:30</div>`;
@@ -1278,7 +1278,7 @@ async function loadSchedule(isSilent = false) {
                         </td>`;
                         i += (span - 1);
                     } else {
-                        gridHTML += `<td class="p-2 border-b border-l border-gray-300 min-w-[100px]"></td>`;
+                        gridHTML += `<td class="p-2 border-b border-l border-gray-300" style="min-width: 120px; width: 120px;"></td>`;
                     }
                 }
                 gridHTML += `</tr>`;
