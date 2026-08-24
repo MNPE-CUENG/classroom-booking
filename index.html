@@ -18,6 +18,15 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        /* บังคับขยับหัวตารางเวลาช่องแรก (08:00) ให้พ้นจากแถบชื่อห้องซ้ายสุด */
+        thead tr th:nth-child(2) {
+            padding-left: 40px !important;
+        }
+        thead tr th:nth-child(2) div {
+            left: 15px !important;
+            transform: none !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
