@@ -1203,7 +1203,7 @@ async function loadSchedule(isSilent = false) {
             let gridHTML = `<div class="scroll-wrapper border border-gray-300 rounded-lg bg-white custom-scrollbar pb-2 pr-6">
                 <table class="w-max min-w-full text-left bg-white border-collapse">
                 <thead class="bg-gray-50 text-gray-600 font-bold text-[11px] uppercase tracking-wider">
-                    <tr><th class="px-5 py-4 border-b border-r border-gray-300 sticky-col min-w-[200px] max-w-[200px] z-30">Room / Time</th>`;
+                <tr><th class="px-5 py-4 border-b border-r border-gray-300 sticky-col min-w-[240px] max-w-[240px] z-30">Room / Time</th>`;
             
             timeSlots.forEach((slot, index) => { 
                     const alignClass = index === 0 ? "left-1.5 -translate-x-0" : "left-0 -translate-x-1/2";
@@ -1217,8 +1217,8 @@ async function loadSchedule(isSilent = false) {
             gridHTML += `</tr></thead><tbody class="divide-y divide-gray-100">`;
 
             roomList.forEach(room => {
-                gridHTML += `<tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-300 sticky-col-white min-w-[200px] max-w-[200px] truncate z-20" title="${room}">${room}</td>`;
+    gridHTML += `<tr class="hover:bg-gray-50 transition-colors">
+        <td class="px-5 py-4 font-bold text-gray-800 border-b border-r border-gray-300 sticky-col-white min-w-[240px] max-w-[240px] truncate z-20" title="${room}">${room}</td>`;
                 
                 for (let i = 0; i < timeSlots.length; i++) {
                     const slot = timeSlots[i];
