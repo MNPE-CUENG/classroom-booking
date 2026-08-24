@@ -1206,8 +1206,9 @@ async function loadSchedule(isSilent = false) {
                     <tr><th class="px-5 py-4 border-b border-r border-gray-200 sticky-col min-w-[200px] max-w-[200px] z-30">Room / Time</th>`;
             
             timeSlots.forEach((slot, index) => { 
-                gridHTML += `<th class="border-b border-l border-gray-200 bg-gray-50 min-w-[100px] h-12 relative">
-                    <div class="absolute left-0 bottom-2 -translate-x-1/2 font-mono text-[11px] font-bold text-gray-500 bg-gray-50 px-1 z-0">${slot}</div>`;
+                    const alignClass = index === 0 ? "left-1.5 -translate-x-0" : "left-0 -translate-x-1/2";
+                    gridHTML += `<th class="border-b border-l border-gray-300 bg-gray-50 min-w-[100px] h-12 relative">
+                    <div class="absolute ${alignClass} bottom-2 font-mono text-[11px] font-bold text-gray-600 bg-gray-50 px-1 z-0">${slot}</div>`;
                 if(index === timeSlots.length - 1) {
                     gridHTML += `<div class="absolute right-0 bottom-2 translate-x-1/2 font-mono text-[11px] font-bold text-gray-500 bg-gray-50 px-1 z-0">21:30</div>`;
                 }
