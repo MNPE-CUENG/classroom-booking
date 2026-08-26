@@ -19,7 +19,7 @@ function setLoginLoading(isLoading) {
     if (isLoading) {
         loginBtnContent.innerHTML = `
             <span class="button-spinner" aria-hidden="true"></span>
-            <span>กำลังตรวจสอบ...</span>
+            <span>Verifying...</span>
         `;
         loginBtn.setAttribute('aria-busy', 'true');
     } else {
@@ -70,7 +70,7 @@ loginForm.addEventListener('submit', async function(event) {
     const passwordInput = passwordField.value.trim();
 
     if (!staffIdInput || !passwordInput) {
-        showLoginError('กรุณากรอก Staff ID และ Password ให้ครบถ้วน');
+        showLoginError('Please enter your email and password.');
         (!staffIdInput ? staffIdField : passwordField).focus();
         return;
     }
@@ -118,7 +118,7 @@ loginForm.addEventListener('submit', async function(event) {
     } catch (error) {
         console.error('Login error:', error);
         showLoginError(
-            'เชื่อมต่อระบบไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+            'Connection failed. Please check your internet connection and try again.'
         );
 
     } finally {
