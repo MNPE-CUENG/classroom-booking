@@ -115,7 +115,6 @@ loginForm.addEventListener('submit', async function(event) {
             errorMsg = "Invalid email or password.";
         }
         showLoginError(errorMsg || 'Invalid email or password.');
-        );
         passwordField.select();
 
     } catch (error) {
