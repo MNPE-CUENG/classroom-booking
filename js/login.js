@@ -110,8 +110,11 @@ loginForm.addEventListener('submit', async function(event) {
             return;
         }
 
-        showLoginError(
-            result.message || 'Invalid email or password.'
+        let errorMsg = result.message;
+        if (errorMsg === "ID หรือ Password ไม่ถูกต้อง") {
+            errorMsg = "Invalid email or password.";
+        }
+        showLoginError(errorMsg || 'Invalid email or password.');
         );
         passwordField.select();
 
