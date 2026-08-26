@@ -23,7 +23,7 @@ function setLoginLoading(isLoading) {
         `;
         loginBtn.setAttribute('aria-busy', 'true');
     } else {
-        loginBtnContent.textContent = 'เข้าสู่ระบบ';
+        loginBtnContent.textContent = 'Sign in';
         loginBtn.removeAttribute('aria-busy');
     }
 }
@@ -111,7 +111,7 @@ loginForm.addEventListener('submit', async function(event) {
         }
 
         showLoginError(
-            result.message || 'ID หรือ Password ไม่ถูกต้อง'
+            result.message || 'Invalid email or password.'
         );
         passwordField.select();
 
